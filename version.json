@@ -1,10 +1,10 @@
 {
-  "version": "1.7.2",
+  "version": "1.7.3",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
-  "sha256": "52b17d364820c4ff35d3b9412620180629b97f012f45b5dbc2d06e501cf8153f",
+  "sha256": "2e658c2de7c7b1e231b66d06eb3a85313c07073f36ca2f9fc10973faa8854077",
   "notes": {
-    "zh-TW": "修正：exe 的「內容 → 詳細資料」正確顯示產品名稱與版本。",
-    "en": "Fix: the exe's Properties > Details now show the product name and version."
+    "zh-TW": "新增圖文操作手冊（程式資料夾 docs/manual，含 PDF 與 Word 版）。",
+    "en": "Added an illustrated user manual (docs/manual, with PDF and Word versions)."
   }
 }

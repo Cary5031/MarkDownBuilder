@@ -4,6 +4,8 @@
 
 ## 使用方式
 
+📖 **完整的圖文操作手冊**：[docs/manual/操作手冊.md](docs/manual/操作手冊.md)（另有 [PDF](docs/manual/MarkDown%20Builder%20操作手冊.pdf) 與 [Word](docs/manual/MarkDown%20Builder%20操作手冊.docx) 版，可直接轉發給同事）
+
 把 `MarkDownBuilder.exe` 複製到任何位置，雙擊即可執行，不需安裝。
 
 開啟文件的方式：
