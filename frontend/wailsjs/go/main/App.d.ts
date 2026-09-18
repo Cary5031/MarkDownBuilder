@@ -8,15 +8,19 @@ export function ExportPDF(arg1:string,arg2:string):Promise<void>;
 
 export function GetStartupFiles():Promise<Array<string>>;
 
+export function ImportTargets(arg1:string,arg2:Array<string>):Promise<main.ImportTarget>;
+
 export function LoadSettings():Promise<main.Settings>;
 
-export function OpenFileDialog(arg1:string,arg2:string,arg3:string):Promise<Array<string>>;
+export function OpenFileDialog(arg1:string,arg2:string,arg3:string,arg4:string):Promise<Array<string>>;
 
 export function OpenWithDefaultApp(arg1:string):Promise<void>;
 
 export function Quit():Promise<void>;
 
 export function ReadFile(arg1:string):Promise<main.Document>;
+
+export function ReadFileBase64(arg1:string):Promise<string>;
 
 export function ResolvePath(arg1:string):Promise<string>;
 

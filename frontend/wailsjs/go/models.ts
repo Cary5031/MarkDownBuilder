@@ -20,6 +20,20 @@ export namespace main {
 	        this.bom = source["bom"];
 	    }
 	}
+	export class ImportTarget {
+	    markdownPath: string;
+	    assetsDir: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportTarget(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.markdownPath = source["markdownPath"];
+	        this.assetsDir = source["assetsDir"];
+	    }
+	}
 	export class Settings {
 	    language: string;
 	

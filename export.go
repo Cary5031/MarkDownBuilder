@@ -35,10 +35,13 @@ func (a *App) ExportDialog(title, defaultName, filterName, ext string) (string, 
 	return path, nil
 }
 
-// WriteBase64File 把前端產生的二進位內容（base64）寫入檔案，例如 .docx。
+// WriteBase64File 把前端產生的二進位內容（base64）寫入檔案，例如 .docx、轉換出的圖片；資料夾不存在時自動建立。
 func (a *App) WriteBase64File(path, data string) error {
 	b, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
 	return os.WriteFile(path, b, 0o644)

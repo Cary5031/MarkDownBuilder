@@ -21,6 +21,7 @@
 - Mermaid 圖表：以 ```` ```mermaid ```` 撰寫流程圖、循序圖、甘特圖等，預覽中直接繪製
 - 數學公式（KaTeX）：行內 `$E=mc^2$`、區塊 `$$ ... $$` 或 ```` ```math ````
 - 匯出 PDF / Word：PDF 版面與預覽一致（使用系統內建的 Microsoft Edge 產生，文字可搜尋）；Word 為原生 .docx，圖表與公式以圖片嵌入
+- 文件轉 Markdown：開啟或拖入 Word（.docx）、Excel（.xlsx / .xls / .ods）、PowerPoint（.pptx）、PDF、HTML、CSV 會自動轉成 Markdown 開在新分頁（Word 圖片另存到「原檔名_images」資料夾；PDF 只轉文字）
 - 預覽可顯示相對路徑圖片（例如 `![](images/a.png)`）；點外部連結會用預設瀏覽器開啟，點其他 `.md` 連結會在編輯器中開啟
 - 文件中的 HTML 會經過過濾，不會執行腳本
 - 有未儲存變更時，標題列顯示 `*`；關閉視窗、新增或開啟其他檔案前會詢問是否儲存
@@ -82,6 +83,8 @@ wails dev          # 開發模式（改前端程式會即時重載）
 | `frontend/src/main.js` | 主畫面邏輯：工具列、檔案操作、同步捲動、對話框 |
 | `frontend/src/editor.js` | 編輯器與格式化指令 |
 | `frontend/src/export.js` | 匯出：組出獨立 HTML、DOM 轉 docx |
+| `frontend/src/importer.js` | 各種文件格式轉 Markdown |
 | `frontend/src/preview.js` | Markdown 轉 HTML、過濾、圖片路徑改寫 |
 | `frontend/src/i18n.js` | 介面字串（新增字串時中英文都要補） |
+| `frontend/vendor/` | SheetJS 官方套件（npm 上的舊版有已知漏洞，改用官方發佈的版本） |
 | `build/appicon.png` | 程式圖示來源（刪掉 `build/windows/icon.ico` 後重新建置會重新產生） |

@@ -1,9 +1,9 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
   "notes": {
-    "zh-TW": "新增匯出 PDF 與 Word：PDF 版面與預覽一致、文字可搜尋；Word 為原生格式，圖表與公式以圖片嵌入。",
-    "en": "Added PDF and Word export: PDFs match the preview with searchable text; Word files are native .docx with diagrams and formulas embedded as images."
+    "zh-TW": "新增文件轉 Markdown：開啟或拖入 Word、Excel、PowerPoint、PDF、HTML、CSV 會自動轉成 Markdown。",
+    "en": "Added document conversion: opening or dropping Word, Excel, PowerPoint, PDF, HTML or CSV files converts them to Markdown automatically."
   }
 }

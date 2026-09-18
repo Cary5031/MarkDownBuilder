@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -128,13 +130,64 @@ func markdownFilters(filterName, allName string) []runtime.FileFilter {
 	}
 }
 
+// 可自動轉換成 Markdown 的文件格式
+const importPattern = "*.docx;*.xlsx;*.xls;*.ods;*.pptx;*.pdf;*.html;*.htm;*.csv"
+
 // OpenFileDialog 顯示開啟檔案對話框（可多選），取消時回傳空陣列。
-func (a *App) OpenFileDialog(title, filterName, allName string) ([]string, error) {
+func (a *App) OpenFileDialog(title, supportedName, filterName, allName string) ([]string, error) {
 	return runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:            title,
 		DefaultDirectory: a.docDir(),
-		Filters:          markdownFilters(filterName, allName),
+		Filters: append([]runtime.FileFilter{
+			{DisplayName: supportedName, Pattern: "*.md;*.markdown;*.mdown;*.mkd;*.txt;" + importPattern},
+		}, markdownFilters(filterName, allName)...),
 	})
+}
+
+// ReadFileBase64 讀取二進位檔（供前端轉換 Word / Excel / PDF 等格式）。
+func (a *App) ReadFileBase64(path string) (string, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
+// ImportTarget 是轉換文件時建議的輸出位置。
+type ImportTarget struct {
+	MarkdownPath string `json:"markdownPath"` // 原檔旁的 .md（不覆蓋既有檔案）
+	AssetsDir    string `json:"assetsDir"`    // 圖片資料夾名稱（相對於 .md）
+}
+
+// ImportTargets 依來源檔案計算輸出 .md 路徑與圖片資料夾，已存在（或已被分頁佔用，taken）時加上編號。
+func (a *App) ImportTargets(src string, taken []string) ImportTarget {
+	dir := filepath.Dir(src)
+	base := strings.TrimSuffix(filepath.Base(src), filepath.Ext(src))
+	for i := 0; ; i++ {
+		name := base
+		if i > 0 {
+			name = fmt.Sprintf("%s-%d", base, i)
+		}
+		md := filepath.Join(dir, name+".md")
+		assets := name + "_images"
+		if !fileExists(md) && !dirExists(filepath.Join(dir, assets)) && !containsFold(taken, md) {
+			return ImportTarget{MarkdownPath: md, AssetsDir: assets}
+		}
+	}
+}
+
+func containsFold(list []string, s string) bool {
+	for _, v := range list {
+		if strings.EqualFold(v, s) {
+			return true
+		}
+	}
+	return false
+}
+
+func dirExists(p string) bool {
+	info, err := os.Stat(p)
+	return err == nil && info.IsDir()
 }
 
 // SaveFileDialog 顯示另存新檔對話框，取消時回傳空字串；沒有副檔名時自動補 .md。

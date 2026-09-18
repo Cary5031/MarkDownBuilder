@@ -14,12 +14,16 @@ export function GetStartupFiles() {
   return window['go']['main']['App']['GetStartupFiles']();
 }
 
+export function ImportTargets(arg1, arg2) {
+  return window['go']['main']['App']['ImportTargets'](arg1, arg2);
+}
+
 export function LoadSettings() {
   return window['go']['main']['App']['LoadSettings']();
 }
 
-export function OpenFileDialog(arg1, arg2, arg3) {
-  return window['go']['main']['App']['OpenFileDialog'](arg1, arg2, arg3);
+export function OpenFileDialog(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['OpenFileDialog'](arg1, arg2, arg3, arg4);
 }
 
 export function OpenWithDefaultApp(arg1) {
@@ -32,6 +36,10 @@ export function Quit() {
 
 export function ReadFile(arg1) {
   return window['go']['main']['App']['ReadFile'](arg1);
+}
+
+export function ReadFileBase64(arg1) {
+  return window['go']['main']['App']['ReadFileBase64'](arg1);
 }
 
 export function ResolvePath(arg1) {

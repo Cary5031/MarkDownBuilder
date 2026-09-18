@@ -11,13 +11,14 @@ import {
 import {
   GetStartupFiles, LoadSettings, SaveSettings, OpenFileDialog, SaveFileDialog,
   ReadFile, SaveFile, SetDirty, SetDocPath, ResolvePath, Quit,
-  ExportDialog, ExportPDF, WriteBase64File, OpenWithDefaultApp,
+  ExportDialog, ExportPDF, WriteBase64File, OpenWithDefaultApp, ImportTargets,
 } from '../wailsjs/go/main/App';
 import { EventsOn, OnFileDrop, WindowSetTitle, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 import { t, setLanguage, detectLanguage, languages, applyToDom } from './i18n.js';
 import { createEditor, commands } from './editor.js';
 import { renderPreview, lineAnchors } from './preview.js';
 import { buildHtml, buildDocx } from './export.js';
+import { IMPORTABLE, UNSUPPORTED, importDocument } from './importer.js';
 
 const $ = (id) => document.getElementById(id);
 const workspace = $('mdb-workspace');
@@ -363,11 +364,19 @@ function newFile() {
   addTab();
 }
 
-// 開啟檔案成為分頁；已開啟則切換過去；目前是空白分頁則取代它
+// 開啟檔案成為分頁；已開啟則切換過去；目前是空白分頁則取代它；Word / Excel 等文件自動轉換
 async function openPath(path) {
   const existing = tabs.find((tab) => samePath(tab.path, path));
   if (existing) {
     activate(existing);
+    return;
+  }
+  if (UNSUPPORTED.test(path)) {
+    await showError(t('unsupportedFormat', { name: fileName(path) }));
+    return;
+  }
+  if (IMPORTABLE.test(path)) {
+    await importPath(path);
     return;
   }
   let d;
@@ -382,8 +391,38 @@ async function openPath(path) {
   if (reuse) removeTab(reuse);
 }
 
+// 轉換文件成 Markdown，開成未存檔的新分頁（預設存到原檔旁的「原檔名.md」）
+async function importPath(path) {
+  document.body.classList.add('busy');
+  clearTimeout(messageTimer);
+  $('mdb-status-message').textContent = t('importing');
+  let result;
+  try {
+    const target = await ImportTargets(path, tabs.map((tab) => tab.path).filter(Boolean));
+    result = { path: target.markdownPath, markdown: await importDocument(path, target, { slide: t('slide') }) };
+  } catch (err) {
+    $('mdb-status-message').textContent = '';
+    await showError(t('importFailed', { name: fileName(path), error: String(err?.message ?? err) }));
+    return;
+  } finally {
+    document.body.classList.remove('busy');
+  }
+  const reuse = active && isPristine(active) ? active : null;
+  const tab = addTab({ path: result.path }, result.markdown);
+  if (reuse) removeTab(reuse);
+  // 尚未存檔：以空白內容當作「已存」基準，分頁會顯示未存檔
+  tab.savedDoc = editor.createState('').doc;
+  tab.dirty = true;
+  syncGlobalDirty();
+  updateTitle();
+  renderTabs();
+  flashMessage(t('importedFrom', { name: fileName(path) }));
+}
+
 async function openFile(path) {
-  const paths = path ? [path] : await OpenFileDialog(t('dialogOpenTitle'), t('markdownFiles'), t('allFiles'));
+  const paths = path
+    ? [path]
+    : await OpenFileDialog(t('dialogOpenTitle'), t('supportedFiles'), t('markdownFiles'), t('allFiles'));
   for (const p of paths ?? []) await openPath(p);
 }
 
@@ -637,11 +676,12 @@ previewScroll.addEventListener('click', async (e) => {
 });
 
 // ---- 拖放開檔 ----
-const SUPPORTED = /\.(md|markdown|mdown|mkd|txt)$/i;
+const MARKDOWN = /\.(md|markdown|mdown|mkd|txt)$/i;
+const canOpen = (p) => MARKDOWN.test(p) || IMPORTABLE.test(p) || UNSUPPORTED.test(p);
 OnFileDrop(async (_x, _y, paths) => {
   if (modalOpen || !paths?.length) return;
-  const unsupported = paths.filter((p) => !SUPPORTED.test(p));
-  for (const p of paths.filter((p) => SUPPORTED.test(p))) await openPath(p);
+  const unsupported = paths.filter((p) => !canOpen(p));
+  for (const p of paths.filter(canOpen)) await openPath(p);
   if (unsupported.length) showError(t('unsupportedFile', { name: unsupported.map(fileName).join('、') }));
 }, false);
 
