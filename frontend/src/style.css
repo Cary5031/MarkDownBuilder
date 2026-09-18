@@ -286,6 +286,23 @@ body {
   color: var(--accent);
 }
 
+.status-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.status-link:hover {
+  text-decoration: underline;
+}
+
+.status-link[hidden] {
+  display: none;
+}
+
 .status-info {
   white-space: pre;
 }

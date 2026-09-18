@@ -36,6 +36,7 @@ export namespace main {
 	}
 	export class Settings {
 	    language: string;
+	    defaultPrompt: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -44,6 +45,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.language = source["language"];
+	        this.defaultPrompt = source["defaultPrompt"];
 	    }
 	}
 

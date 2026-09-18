@@ -18,6 +18,10 @@ export function ImportTargets(arg1, arg2) {
   return window['go']['main']['App']['ImportTargets'](arg1, arg2);
 }
 
+export function IsDefaultMarkdownApp() {
+  return window['go']['main']['App']['IsDefaultMarkdownApp']();
+}
+
 export function LoadSettings() {
   return window['go']['main']['App']['LoadSettings']();
 }
@@ -64,6 +68,10 @@ export function SetDirty(arg1) {
 
 export function SetDocPath(arg1) {
   return window['go']['main']['App']['SetDocPath'](arg1);
+}
+
+export function ShowDefaultAppDialog() {
+  return window['go']['main']['App']['ShowDefaultAppDialog']();
 }
 
 export function WriteBase64File(arg1, arg2) {

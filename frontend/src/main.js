@@ -12,6 +12,7 @@ import {
   GetStartupFiles, LoadSettings, SaveSettings, OpenFileDialog, SaveFileDialog,
   ReadFile, SaveFile, SetDirty, SetDocPath, ResolvePath, Quit,
   ExportDialog, ExportPDF, WriteBase64File, OpenWithDefaultApp, ImportTargets,
+  IsDefaultMarkdownApp, ShowDefaultAppDialog,
 } from '../wailsjs/go/main/App';
 import { EventsOn, OnFileDrop, WindowSetTitle, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 import { t, setLanguage, detectLanguage, languages, applyToDom } from './i18n.js';
@@ -33,6 +34,7 @@ let tabs = [];
 let active = null;
 let tabSeq = 0;
 let viewMode = 'split';
+let settings = { language: '', defaultPrompt: '' };
 
 const editor = createEditor($('mdb-editor'), {
   onChange: () => {
@@ -526,8 +528,40 @@ function changeLanguage(code) {
   updateStatusInfo();
   renderTabs();
   if (view.state.doc.length === 0) render();
-  SaveSettings({ language: code });
+  settings.language = code;
+  SaveSettings(settings);
 }
+
+// ---- 預設程式（.md 檔案關聯）----
+async function refreshDefaultLink() {
+  $('mdb-set-default').hidden = await IsDefaultMarkdownApp();
+}
+
+async function setAsDefault() {
+  try {
+    await ShowDefaultAppDialog();
+  } catch (err) {
+    await showError(String(err));
+  }
+  await refreshDefaultLink();
+}
+
+// 不是預設程式時，第一次啟動詢問（使用者選「不要再問」後就不再出現）
+async function promptDefaultApp() {
+  if (settings.defaultPrompt === 'never' || (await IsDefaultMarkdownApp())) return;
+  const answer = await showModal(t('setDefault'), t('defaultMessage'), [
+    { label: t('btnSetDefault'), value: 'set', primary: true },
+    { label: t('btnLater'), value: 'later' },
+    { label: t('btnNever'), value: 'never' },
+  ], 'later');
+  if (answer === 'set') await setAsDefault();
+  if (answer === 'never') {
+    settings.defaultPrompt = 'never';
+    SaveSettings(settings);
+  }
+}
+
+$('mdb-set-default').addEventListener('click', setAsDefault);
 
 // ---- 工具列 ----
 const toolbarGroups = [
@@ -685,6 +719,11 @@ OnFileDrop(async (_x, _y, paths) => {
   if (unsupported.length) showError(t('unsupportedFile', { name: unsupported.map(fileName).join('、') }));
 }, false);
 
+// ---- 其他執行個體轉交的檔案（程式已開啟時又雙擊 .md）----
+EventsOn('open-files', async (paths) => {
+  for (const path of paths ?? []) await openPath(path);
+});
+
 // ---- 關閉視窗：逐一詢問有未存變更的分頁 ----
 EventsOn('close-requested', async () => {
   if (modalOpen) return;
@@ -697,7 +736,7 @@ EventsOn('close-requested', async () => {
 // ---- 啟動 ----
 async function init() {
   buildToolbar();
-  const settings = await LoadSettings();
+  settings = { ...settings, ...(await LoadSettings()) };
   const lang = settings.language || detectLanguage();
   $('mdb-language').value = lang;
   setLanguage(lang);
@@ -706,6 +745,8 @@ async function init() {
 
   addTab();
   for (const path of await GetStartupFiles()) await openPath(path);
+  await refreshDefaultLink();
+  await promptDefaultApp();
 }
 
 init();

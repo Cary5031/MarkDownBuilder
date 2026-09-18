@@ -10,6 +10,8 @@ export function GetStartupFiles():Promise<Array<string>>;
 
 export function ImportTargets(arg1:string,arg2:Array<string>):Promise<main.ImportTarget>;
 
+export function IsDefaultMarkdownApp():Promise<boolean>;
+
 export function LoadSettings():Promise<main.Settings>;
 
 export function OpenFileDialog(arg1:string,arg2:string,arg3:string,arg4:string):Promise<Array<string>>;
@@ -33,5 +35,7 @@ export function SaveSettings(arg1:main.Settings):Promise<void>;
 export function SetDirty(arg1:boolean):Promise<void>;
 
 export function SetDocPath(arg1:string):Promise<void>;
+
+export function ShowDefaultAppDialog():Promise<void>;
 
 export function WriteBase64File(arg1:string,arg2:string):Promise<void>;

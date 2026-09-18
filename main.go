@@ -34,6 +34,11 @@ func main() {
 		DragAndDrop: &options.DragAndDrop{
 			EnableFileDrop: true, // 拖進視窗的檔案交給前端 OnFileDrop 開啟
 		},
+		// 只執行一個程式：再次雙擊 .md 時交給既有視窗開成新分頁
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "e3a1c9f4-5b7d-4c2e-9f60-markdownbuilder",
+			OnSecondInstanceLaunch: app.onSecondInstance,
+		},
 		OnStartup:     app.startup,
 		OnBeforeClose: app.beforeClose,
 		Bind: []interface{}{

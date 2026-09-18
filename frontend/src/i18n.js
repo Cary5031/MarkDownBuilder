@@ -69,6 +69,11 @@ const messages = {
     importedFrom: '已從「{name}」轉換，尚未存檔',
     unsupportedFormat: '不支援的格式：{name}。請先用 Office 另存為 .docx / .xlsx / .pptx 後再開啟。',
     slide: '投影片',
+    setDefault: '設為預設程式',
+    defaultMessage: '要把 MarkDown Builder 設為 .md 檔的預設開啟程式嗎？接下來會出現 Windows 的「選擇開啟方式」視窗，請選 MarkDown Builder 並勾選「一律使用此應用程式」。',
+    btnSetDefault: '設定',
+    btnLater: '以後再說',
+    btnNever: '不要再問',
   },
   en: {
     appName: 'MarkDown Builder',
@@ -139,6 +144,11 @@ const messages = {
     importedFrom: 'Converted from "{name}" (not saved yet)',
     unsupportedFormat: 'Unsupported format: {name}. Save it as .docx / .xlsx / .pptx in Office first.',
     slide: 'Slide',
+    setDefault: 'Set as default app',
+    defaultMessage: 'Make MarkDown Builder the default app for .md files? Windows will show a "How do you want to open this file?" window — choose MarkDown Builder and check "Always use this app".',
+    btnSetDefault: 'Set up',
+    btnLater: 'Later',
+    btnNever: "Don't ask again",
   },
 };
 

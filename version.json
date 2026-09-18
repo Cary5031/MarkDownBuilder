@@ -1,9 +1,9 @@
 {
-  "version": "1.5.0",
+  "version": "1.6.0",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
   "notes": {
-    "zh-TW": "新增文件轉 Markdown：開啟或拖入 Word、Excel、PowerPoint、PDF、HTML、CSV 會自動轉成 Markdown。",
-    "en": "Added document conversion: opening or dropping Word, Excel, PowerPoint, PDF, HTML or CSV files converts them to Markdown automatically."
+    "zh-TW": "新增 .md 檔案關聯自動註冊與設為預設程式；程式已開啟時雙擊 .md 會在同一視窗開成新分頁。",
+    "en": "Added automatic .md file association and a set-as-default prompt; double-clicking .md files while the app is running opens them as new tabs."
   }
 }

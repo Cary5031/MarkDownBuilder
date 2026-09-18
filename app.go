@@ -12,6 +12,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/text/encoding/traditionalchinese"
 )
@@ -30,7 +31,8 @@ type Document struct {
 
 // Settings 是使用者偏好，存在 %APPDATA%\MarkDownBuilder\settings.json
 type Settings struct {
-	Language string `json:"language"`
+	Language      string `json:"language"`
+	DefaultPrompt string `json:"defaultPrompt"` // "never"：不再詢問是否設為預設程式
 }
 
 // App 提供給前端呼叫的方法。
@@ -49,6 +51,29 @@ func NewApp() *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	// 註冊 .md 檔案關聯（HKCU），失敗不影響使用
+	go registerFileAssociations()
+}
+
+// onSecondInstance：程式已在執行時又被開啟（例如雙擊 .md），把檔案交給前端開成分頁並帶到最前面。
+func (a *App) onSecondInstance(data options.SecondInstanceData) {
+	files := []string{}
+	for _, arg := range data.Args {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		if !filepath.IsAbs(arg) {
+			arg = filepath.Join(data.WorkingDirectory, arg)
+		}
+		files = append(files, filepath.Clean(arg))
+	}
+	runtime.WindowUnminimise(a.ctx)
+	runtime.WindowShow(a.ctx)
+	runtime.WindowSetAlwaysOnTop(a.ctx, true)
+	runtime.WindowSetAlwaysOnTop(a.ctx, false)
+	if len(files) > 0 {
+		runtime.EventsEmit(a.ctx, "open-files", files)
+	}
 }
 
 // beforeClose：有未存變更時先攔下，交給前端詢問使用者。

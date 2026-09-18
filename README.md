@@ -10,7 +10,8 @@
 
 - 工具列「開啟」或 `Ctrl+O`
 - 把 `.md` 檔拖進視窗
-- 在檔案總管對 `.md` 按右鍵 →「開啟檔案」→ 選擇 `MarkDownBuilder.exe`（勾選「一律使用」即可雙擊 .md 直接開啟）
+- 雙擊 `.md`：程式啟動時會自動註冊 .md 檔案關聯；第一次啟動會詢問是否設為預設程式（也可以點狀態列右側的「設為預設程式」），在 Windows 的視窗中選擇 MarkDown Builder 並勾選「一律使用此應用程式」即可
+- 程式已開啟時再雙擊其他 `.md`，會在同一個視窗開成新分頁
 - 命令列：`MarkDownBuilder.exe 文件.md`
 
 ### 功能
@@ -79,6 +80,7 @@ wails dev          # 開發模式（改前端程式會即時重載）
 | `main.go` | 視窗設定、內嵌資源、拖放、關閉攔截 |
 | `app.go` | 給前端呼叫的方法：開檔 / 存檔 / 對話框 / 設定 |
 | `dochandler.go` | 提供預覽中的本機圖片 |
+| `assoc.go` | .md 檔案關聯註冊（HKCU）、預設程式設定 |
 | `export.go` | 匯出：呼叫 Edge 產生 PDF、寫入 docx、用預設程式開啟 |
 | `frontend/src/main.js` | 主畫面邏輯：工具列、檔案操作、同步捲動、對話框 |
 | `frontend/src/editor.js` | 編輯器與格式化指令 |
