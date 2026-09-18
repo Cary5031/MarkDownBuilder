@@ -450,3 +450,18 @@ body {
   color: inherit;
   white-space: pre-wrap;
 }
+
+/* ---- 數學公式 ---- */
+.markdown-body .katex-block {
+  margin: 0 0 1em;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markdown-body .katex {
+  font-size: 1.1em;
+}
+
+.markdown-body .katex-error {
+  color: #b42318;
+}

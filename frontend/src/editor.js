@@ -187,6 +187,7 @@ export const commands = {
     return insertBlock(v, table, 2, 2 + h.length + 2);
   },
   hr: (v) => insertBlock(v, '---'),
+  math: (v) => insertBlock(v, '$$\nE = mc^2\n$$', 3, 11),
 };
 
 const formatKeymap = keymap.of([

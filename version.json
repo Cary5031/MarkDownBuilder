@@ -1,9 +1,9 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
   "notes": {
-    "zh-TW": "新增 Mermaid 圖表：流程圖、循序圖、甘特圖等可在預覽中直接繪製。",
-    "en": "Added Mermaid diagrams: flowcharts, sequence diagrams, Gantt charts and more render in the preview."
+    "zh-TW": "新增數學公式（KaTeX）：支援行內 $...$、區塊 $$...$$ 與 math 程式碼區塊，工具列新增公式按鈕。",
+    "en": "Added math formulas (KaTeX): inline $...$, block $$...$$ and math code blocks, plus a toolbar button."
   }
 }

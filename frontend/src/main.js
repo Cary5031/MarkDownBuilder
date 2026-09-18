@@ -6,7 +6,7 @@ import {
   Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, ListTodo, TextQuote,
   Code, SquareCode, Link, Image, Table, Minus,
-  PenLine, Columns2, Eye, Languages,
+  PenLine, Columns2, Eye, Languages, Sigma,
 } from 'lucide';
 import {
   GetStartupFile, LoadSettings, SaveSettings, OpenFileDialog, SaveFileDialog,
@@ -350,6 +350,7 @@ const toolbarGroups = [
     { icon: Image, key: 'image' },
     { icon: Table, key: 'table' },
     { icon: Minus, key: 'hr' },
+    { icon: Sigma, key: 'math' },
   ],
 ];
 

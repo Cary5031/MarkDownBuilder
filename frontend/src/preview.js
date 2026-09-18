@@ -2,6 +2,8 @@ import MarkdownIt from 'markdown-it';
 import taskLists from 'markdown-it-task-lists';
 import hljs from 'highlight.js/lib/common';
 import DOMPurify from 'dompurify';
+import markdownItKatex from '@vscode/markdown-it-katex';
+import 'katex/dist/katex.min.css';
 import { t } from './i18n.js';
 
 const md = new MarkdownIt({
@@ -18,7 +20,20 @@ const md = new MarkdownIt({
     }
     return '';
   },
-}).use(taskLists, { label: true });
+})
+  .use(taskLists, { label: true })
+  // 數學公式：$行內$、$$區塊$$、```math
+  .use(markdownItKatex.default ?? markdownItKatex, { enableFencedBlocks: true, throwOnError: false });
+
+// 區塊公式補上 data-line，讓同步捲動能定位
+for (const rule of ['math_block', 'math_inline_block']) {
+  const render = md.renderer.rules[rule];
+  md.renderer.rules[rule] = (tokens, idx, ...rest) => {
+    const line = tokens[idx].map?.[0];
+    const html = render(tokens, idx, ...rest);
+    return line === undefined ? html : html.replace('<p class="katex-block', `<p data-line="${line}" class="katex-block`);
+  };
+}
 
 // 在每個區塊元素加上 data-line（原始碼行號，0 起算），供同步捲動使用
 md.core.ruler.push('source_line', (state) => {
@@ -37,7 +52,11 @@ md.renderer.rules.fence = (tokens, idx, options, env, slf) => {
   if (lang === 'mermaid') {
     return `<div class="mermaid-block" data-line="${token.attrGet('data-line')}"><pre class="mermaid-source">${md.utils.escapeHtml(token.content)}</pre></div>\n`;
   }
-  return defaultFence(tokens, idx, options, env, slf);
+  const html = defaultFence(tokens, idx, options, env, slf);
+  // ```math 由 KaTeX 外掛輸出為 <p class="katex-block">，補上 data-line
+  return lang === 'math'
+    ? html.replace('<p class="katex-block', `<p data-line="${token.attrGet('data-line')}" class="katex-block`)
+    : html;
 };
 
 // ---- Mermaid：延遲載入、依原始碼快取結果 ----
