@@ -28,6 +28,7 @@
 - 有未儲存變更時，標題列顯示 `*`；關閉視窗、新增或開啟其他檔案前會詢問是否儲存
 - 以 UTF-8 儲存，保留原檔的換行格式（CRLF / LF）；Big5 編碼的舊檔也能正確開啟（存檔後轉為 UTF-8）
 - 右上角切換介面語言，下次開啟會記住
+- 自動更新：有網路時會檢查 GitHub 上的新版本，右下角提示後可一鍵下載並自動重新啟動成新版（離線時不檢查）
 
 ### 快捷鍵
 
@@ -71,7 +72,7 @@ wails dev          # 開發模式（改前端程式會即時重載）
 .\publish.ps1 -Version 1.1.0   # 更新 version.json 的版本與日期、同步 wails.json，並重新建置 exe
 ```
 
-接著修改 `version.json` 的 `notes`（更新說明），再把 `build/bin/MarkDownBuilder.exe` 一起 commit 並推送。
+建置完成後 `publish.ps1` 會自動把 exe 的 SHA-256 寫入 `version.json`（程式下載更新後用來驗證檔案）。接著修改 `version.json` 的 `notes`（更新說明），再把 `build/bin/MarkDownBuilder.exe` 一起 commit 並推送。已安裝的程式會在下次檢查時看到新版本。
 
 ### 專案結構
 
@@ -81,6 +82,7 @@ wails dev          # 開發模式（改前端程式會即時重載）
 | `app.go` | 給前端呼叫的方法：開檔 / 存檔 / 對話框 / 設定 |
 | `dochandler.go` | 提供預覽中的本機圖片 |
 | `assoc.go` | .md 檔案關聯註冊（HKCU）、預設程式設定 |
+| `updater.go` | 自動更新：檢查版本、下載驗證、替換並重新啟動 |
 | `export.go` | 匯出：呼叫 Edge 產生 PDF、寫入 docx、用預設程式開啟 |
 | `frontend/src/main.js` | 主畫面邏輯：工具列、檔案操作、同步捲動、對話框 |
 | `frontend/src/editor.js` | 編輯器與格式化指令 |

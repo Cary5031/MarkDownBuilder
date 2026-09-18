@@ -45,6 +45,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $exe = Join-Path $PSScriptRoot 'build\bin\MarkDownBuilder.exe'
+
+# 把 exe 的 SHA-256 寫入 version.json，自動更新下載後用來驗證檔案
+$hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+$versionText = [IO.File]::ReadAllText($versionFile)
+if ($versionText -match '"sha256"') {
+    $versionText = $versionText -replace '"sha256":\s*"[^"]*"', ('"sha256": "' + $hash + '"')
+} else {
+    $versionText = $versionText -replace '("downloadUrl":\s*"[^"]*")', ('$1,' + "`n" + '  "sha256": "' + $hash + '"')
+}
+[IO.File]::WriteAllText($versionFile, $versionText, $utf8)
 $sizeMB = [Math]::Round((Get-Item $exe).Length / 1MB, 1)
 Write-Host ''
 Write-Host "完成：$exe（$sizeMB MB）" -ForegroundColor Green

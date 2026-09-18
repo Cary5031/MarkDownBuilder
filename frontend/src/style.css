@@ -608,3 +608,84 @@ body.busy * {
 .export-body .katex-display > .katex {
   display: inline-block;
 }
+
+/* ---- 自動更新卡片（右下角）---- */
+.update-toast {
+  position: fixed;
+  right: 16px;
+  bottom: 40px;
+  z-index: 90;
+  width: min(340px, calc(100vw - 32px));
+  padding: 14px 16px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.update-toast[hidden] {
+  display: none;
+}
+
+.update-title {
+  font-weight: 600;
+}
+
+.update-notes {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.update-notes[hidden],
+.update-progress[hidden] {
+  display: none;
+}
+
+.update-progress {
+  height: 6px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: var(--hover);
+  border-radius: 3px;
+}
+
+.update-bar {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+.update-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.update-actions:empty {
+  display: none;
+}
+
+.update-actions button {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.update-actions button:hover {
+  background: var(--hover);
+}
+
+.update-actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}

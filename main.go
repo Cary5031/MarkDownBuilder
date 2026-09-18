@@ -14,6 +14,7 @@ import (
 var assets embed.FS
 
 func main() {
+	prepareAfterUpdate()
 	app := NewApp()
 
 	err := wails.Run(&options.App{

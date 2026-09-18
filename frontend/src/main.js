@@ -13,9 +13,10 @@ import {
   ReadFile, SaveFile, SetDirty, SetDocPath, ResolvePath, Quit,
   ExportDialog, ExportPDF, WriteBase64File, OpenWithDefaultApp, ImportTargets,
   IsDefaultMarkdownApp, ShowDefaultAppDialog,
+  CheckForUpdate, ApplyUpdate, WasUpdated, GetVersion,
 } from '../wailsjs/go/main/App';
 import { EventsOn, OnFileDrop, WindowSetTitle, BrowserOpenURL } from '../wailsjs/runtime/runtime';
-import { t, setLanguage, detectLanguage, languages, applyToDom } from './i18n.js';
+import { t, setLanguage, getLanguage, detectLanguage, languages, applyToDom } from './i18n.js';
 import { createEditor, commands } from './editor.js';
 import { renderPreview, lineAnchors } from './preview.js';
 import { buildHtml, buildDocx } from './export.js';
@@ -719,6 +720,89 @@ OnFileDrop(async (_x, _y, paths) => {
   if (unsupported.length) showError(t('unsupportedFile', { name: unsupported.map(fileName).join('、') }));
 }, false);
 
+// ---- 自動更新 ----
+const UPDATE_INTERVAL = 6 * 60 * 60 * 1000;
+let updateDismissed = false;
+let updating = false;
+
+// 右下角的更新卡片；buttons: [{ label, primary, run }]
+function showUpdateToast({ title, notes = '', buttons = [], progress = null }) {
+  $('mdb-update-title').textContent = title;
+  $('mdb-update-notes').textContent = notes;
+  $('mdb-update-notes').hidden = !notes;
+  $('mdb-update-progress').hidden = progress === null;
+  $('mdb-update-bar').style.width = `${progress ?? 0}%`;
+  $('mdb-update-actions').replaceChildren(
+    ...buttons.map((b) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = b.label;
+      btn.className = b.primary ? 'primary' : '';
+      btn.addEventListener('click', b.run);
+      return btn;
+    }),
+  );
+  $('mdb-update').hidden = false;
+}
+
+function hideUpdateToast() {
+  $('mdb-update').hidden = true;
+}
+
+// 檢查新版本；離線或連不上 GitHub 時靜默略過
+async function checkForUpdate() {
+  if (updating || updateDismissed) return;
+  let check;
+  try {
+    check = await CheckForUpdate();
+  } catch {
+    return;
+  }
+  if (!check?.available) return;
+  const notes = check.latest.notes?.[getLanguage()] ?? check.latest.notes?.en ?? '';
+  showUpdateToast({
+    title: t('updateAvailable', { version: check.latest.version }),
+    notes,
+    buttons: [
+      { label: t('btnUpdateNow'), primary: true, run: () => startUpdate(check) },
+      {
+        label: t('btnRemindLater'),
+        run: () => {
+          updateDismissed = true;
+          hideUpdateToast();
+        },
+      },
+    ],
+  });
+}
+
+async function startUpdate(check) {
+  if (modalOpen) return;
+  // 更新會重新啟動程式：先確認每個未存檔的分頁
+  for (const tab of [...tabs]) {
+    if (!(await confirmDiscard(tab))) return;
+  }
+  updating = true;
+  showUpdateToast({ title: t('updateDownloading', { version: check.latest.version }), progress: 0 });
+  try {
+    await ApplyUpdate(); // 成功時程式會自動重新啟動
+  } catch (err) {
+    updating = false;
+    showUpdateToast({
+      title: t('updateFailed'),
+      notes: String(err?.message ?? err),
+      buttons: [
+        { label: t('btnRetry'), primary: true, run: () => startUpdate(check) },
+        { label: t('btnClose'), run: hideUpdateToast },
+      ],
+    });
+  }
+}
+
+EventsOn('update-progress', (pct) => {
+  $('mdb-update-bar').style.width = `${pct}%`;
+});
+
 // ---- 其他執行個體轉交的檔案（程式已開啟時又雙擊 .md）----
 EventsOn('open-files', async (paths) => {
   for (const path of paths ?? []) await openPath(path);
@@ -745,8 +829,17 @@ async function init() {
 
   addTab();
   for (const path of await GetStartupFiles()) await openPath(path);
+  if (await WasUpdated()) {
+    showUpdateToast({ title: t('updatedTo', { version: await GetVersion() }), buttons: [{ label: t('btnOk'), primary: true, run: hideUpdateToast }] });
+    setTimeout(hideUpdateToast, 8000);
+  }
   await refreshDefaultLink();
   await promptDefaultApp();
+  setTimeout(checkForUpdate, 4000);
+  setInterval(() => {
+    updateDismissed = false; // 「稍後」只在這段期間內不再提示
+    checkForUpdate();
+  }, UPDATE_INTERVAL);
 }
 
 init();

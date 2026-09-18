@@ -74,6 +74,13 @@ const messages = {
     btnSetDefault: '設定',
     btnLater: '以後再說',
     btnNever: '不要再問',
+    updateAvailable: '有新版本 v{version}',
+    updateDownloading: '正在下載 v{version}…',
+    updateFailed: '更新失敗',
+    updatedTo: '已更新到 v{version}',
+    btnUpdateNow: '立即更新',
+    btnRetry: '重試',
+    btnRemindLater: '稍後',
   },
   en: {
     appName: 'MarkDown Builder',
@@ -149,6 +156,13 @@ const messages = {
     btnSetDefault: 'Set up',
     btnLater: 'Later',
     btnNever: "Don't ask again",
+    updateAvailable: 'Version {version} is available',
+    updateDownloading: 'Downloading v{version}…',
+    updateFailed: 'Update failed',
+    updatedTo: 'Updated to v{version}',
+    btnUpdateNow: 'Update now',
+    btnRetry: 'Retry',
+    btnRemindLater: 'Later',
   },
 };
 
