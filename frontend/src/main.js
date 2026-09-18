@@ -87,7 +87,7 @@ function render() {
   if (source.trim() === '') {
     preview.innerHTML = `<p class="empty-hint">${t('emptyPreview')}</p>`;
   } else {
-    renderPreview(preview, source);
+    renderPreview(preview, source).then(invalidateAnchors);
     preview.querySelectorAll('img').forEach((img) => img.addEventListener('load', invalidateAnchors, { once: true }));
   }
   invalidateAnchors();

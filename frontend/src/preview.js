@@ -2,6 +2,7 @@ import MarkdownIt from 'markdown-it';
 import taskLists from 'markdown-it-task-lists';
 import hljs from 'highlight.js/lib/common';
 import DOMPurify from 'dompurify';
+import { t } from './i18n.js';
 
 const md = new MarkdownIt({
   html: true,
@@ -28,6 +29,73 @@ md.core.ruler.push('source_line', (state) => {
   }
 });
 
+// ```mermaid 區塊先輸出原始碼，renderPreview 之後再非同步繪製成 SVG
+const defaultFence = md.renderer.rules.fence;
+md.renderer.rules.fence = (tokens, idx, options, env, slf) => {
+  const token = tokens[idx];
+  const lang = token.info.trim().split(/\s+/)[0].toLowerCase();
+  if (lang === 'mermaid') {
+    return `<div class="mermaid-block" data-line="${token.attrGet('data-line')}"><pre class="mermaid-source">${md.utils.escapeHtml(token.content)}</pre></div>\n`;
+  }
+  return defaultFence(tokens, idx, options, env, slf);
+};
+
+// ---- Mermaid：延遲載入、依原始碼快取結果 ----
+let mermaidLoader = null;
+const diagramCache = new Map(); // 原始碼 → { svg } 或 { error }
+let diagramSeq = 0;
+
+function loadMermaid() {
+  mermaidLoader ??= import('mermaid').then(({ default: mermaid }) => {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      suppressErrorRendering: true,
+      theme: 'default',
+      fontFamily: '"Segoe UI", "Microsoft JhengHei UI", "Microsoft JhengHei", sans-serif',
+    });
+    return mermaid;
+  });
+  return mermaidLoader;
+}
+
+function showDiagram(block, result) {
+  if (result.svg) {
+    block.innerHTML = result.svg;
+    block.classList.remove('mermaid-error');
+    return;
+  }
+  block.classList.add('mermaid-error');
+  const title = document.createElement('strong');
+  title.textContent = t('mermaidError');
+  const detail = document.createElement('pre');
+  detail.textContent = result.error;
+  block.replaceChildren(title, detail);
+}
+
+async function renderDiagrams(blocks) {
+  if (!blocks.length) return;
+  const mermaid = await loadMermaid();
+  for (const block of blocks) {
+    if (!block.isConnected) return; // 已被新的預覽取代
+    const source = block.textContent;
+    let result = diagramCache.get(source);
+    if (!result) {
+      const id = `mermaid-${++diagramSeq}`;
+      try {
+        result = { svg: (await mermaid.render(id, source)).svg };
+      } catch (err) {
+        result = { error: String(err?.message ?? err) };
+        document.getElementById(id)?.remove();
+        document.getElementById('d' + id)?.remove();
+      }
+      if (diagramCache.size > 200) diagramCache.delete(diagramCache.keys().next().value);
+      diagramCache.set(source, result);
+    }
+    if (block.isConnected) showDiagram(block, result);
+  }
+}
+
 const EXTERNAL_URL = /^[a-z][a-z0-9+.-]*:/i; // http:、https:、mailto:、data: …
 const WINDOWS_PATH = /^[a-z]:[\\/]/i;
 
@@ -52,7 +120,7 @@ function slugify(text) {
     .replace(/\s/g, '-');
 }
 
-// 產生預覽 HTML 並放進 container
+// 產生預覽 HTML 並放進 container；回傳的 Promise 在圖表都繪製完成後 resolve
 export function renderPreview(container, source) {
   const html = DOMPurify.sanitize(md.render(source), {
     ADD_ATTR: ['data-line'],
@@ -74,6 +142,15 @@ export function renderPreview(container, source) {
   });
 
   container.querySelectorAll('pre > code').forEach((code) => code.classList.add('hljs'));
+
+  // 已快取的圖表立即套用（打字時不閃爍），其餘非同步繪製
+  const pending = [];
+  container.querySelectorAll('.mermaid-block').forEach((block) => {
+    const cached = diagramCache.get(block.textContent);
+    if (cached) showDiagram(block, cached);
+    else pending.push(block);
+  });
+  return renderDiagrams(pending);
 }
 
 // 取得預覽中各區塊的 [原始碼行號, 在 container 中的 Y 座標]，依行號排序

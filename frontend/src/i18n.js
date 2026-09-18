@@ -50,6 +50,7 @@ const messages = {
     saved: '已儲存',
     lineCol: '第 {line} 行，第 {col} 欄',
     emptyPreview: '在左邊輸入 Markdown，這裡會即時顯示排版結果。',
+    mermaidError: '圖表語法錯誤',
   },
   en: {
     appName: 'MarkDown Builder',
@@ -101,6 +102,7 @@ const messages = {
     saved: 'Saved',
     lineCol: 'Ln {line}, Col {col}',
     emptyPreview: 'Type Markdown on the left to see the formatted result here.',
+    mermaidError: 'Diagram syntax error',
   },
 };
 

@@ -416,3 +416,37 @@ body {
   border: none;
   background: var(--border);
 }
+
+/* ---- Mermaid 圖表 ---- */
+.markdown-body .mermaid-block {
+  margin: 0 0 1em;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.markdown-body .mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.markdown-body .mermaid-source {
+  text-align: left;
+  color: var(--muted);
+}
+
+.markdown-body .mermaid-error {
+  padding: 10px 14px;
+  text-align: left;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  border-radius: 8px;
+}
+
+.markdown-body .mermaid-error pre {
+  margin: 6px 0 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  white-space: pre-wrap;
+}

@@ -1,9 +1,9 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
   "notes": {
-    "zh-TW": "第一版：Markdown 編輯與即時預覽、同步捲動、GFM、格式工具列、中英文介面。",
-    "en": "First release: Markdown editing with live preview, scroll sync, GFM, formatting toolbar, English / Traditional Chinese UI."
+    "zh-TW": "新增 Mermaid 圖表：流程圖、循序圖、甘特圖等可在預覽中直接繪製。",
+    "en": "Added Mermaid diagrams: flowcharts, sequence diagrams, Gantt charts and more render in the preview."
   }
 }
