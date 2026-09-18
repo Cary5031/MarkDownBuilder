@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MarkDown Builder</title>
+</head>
+<body>
+<header class="toolbar" id="mdb-toolbar"></header>
+<main class="workspace mode-split" id="mdb-workspace">
+    <section class="pane editor-pane" id="mdb-editor"></section>
+    <div class="divider"></div>
+    <section class="pane preview-pane" id="mdb-preview-scroll">
+        <article class="markdown-body" id="mdb-preview"></article>
+    </section>
+</main>
+<footer class="statusbar">
+    <span class="status-path" id="mdb-status-path"></span>
+    <span class="status-message" id="mdb-status-message"></span>
+    <span class="status-info" id="mdb-status-info"></span>
+</footer>
+<div class="modal-backdrop" id="mdb-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mdb-modal-title">
+        <h2 id="mdb-modal-title"></h2>
+        <p id="mdb-modal-message"></p>
+        <div class="modal-actions" id="mdb-modal-actions"></div>
+    </div>
+</div>
+<script src="./src/main.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "releaseDate": "2026-09-18",
+  "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
+  "notes": {
+    "zh-TW": "第一版：Markdown 編輯與即時預覽、同步捲動、GFM、格式工具列、中英文介面。",
+    "en": "First release: Markdown editing with live preview, scroll sync, GFM, formatting toolbar, English / Traditional Chinese UI."
+  }
+}
