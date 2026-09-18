@@ -1,10 +1,10 @@
 {
-  "version": "1.7.1",
+  "version": "1.7.2",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
-  "sha256": "bca16d46b32f9772277646dc17c6a7a22d24617426ee016fd6ee7095b8bb653a",
+  "sha256": "52b17d364820c4ff35d3b9412620180629b97f012f45b5dbc2d06e501cf8153f",
   "notes": {
-    "zh-TW": "修正：更新時改從固定版本網址下載，避免剛發布時下載到快取中的舊檔。",
-    "en": "Fix: updates now download from a commit-pinned URL so a freshly published release is never served from a stale cache."
+    "zh-TW": "修正：exe 的「內容 → 詳細資料」正確顯示產品名稱與版本。",
+    "en": "Fix: the exe's Properties > Details now show the product name and version."
   }
 }
