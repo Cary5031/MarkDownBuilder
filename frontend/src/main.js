@@ -6,16 +6,18 @@ import {
   Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, ListTodo, TextQuote,
   Code, SquareCode, Link, Image, Table, Minus,
-  PenLine, Columns2, Eye, Languages, Sigma, Plus, X,
+  PenLine, Columns2, Eye, Languages, Sigma, Plus, X, FileDown, FileText,
 } from 'lucide';
 import {
   GetStartupFiles, LoadSettings, SaveSettings, OpenFileDialog, SaveFileDialog,
   ReadFile, SaveFile, SetDirty, SetDocPath, ResolvePath, Quit,
+  ExportDialog, ExportPDF, WriteBase64File, OpenWithDefaultApp,
 } from '../wailsjs/go/main/App';
 import { EventsOn, OnFileDrop, WindowSetTitle, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 import { t, setLanguage, detectLanguage, languages, applyToDom } from './i18n.js';
 import { createEditor, commands } from './editor.js';
 import { renderPreview, lineAnchors } from './preview.js';
+import { buildHtml, buildDocx } from './export.js';
 
 const $ = (id) => document.getElementById(id);
 const workspace = $('mdb-workspace');
@@ -425,6 +427,48 @@ async function saveAs() {
   return ok;
 }
 
+// ---- 匯出 PDF / Word ----
+let exporting = false;
+
+async function exportAs(kind) {
+  if (exporting) return;
+  const ext = kind === 'pdf' ? 'pdf' : 'docx';
+  const base = active.path ? fileName(active.path).replace(/\.[^.]+$/, '') : t('untitled');
+  const path = await ExportDialog(
+    t(kind === 'pdf' ? 'exportPdf' : 'exportWord'),
+    `${base}.${ext}`,
+    t(kind === 'pdf' ? 'pdfFiles' : 'wordFiles'),
+    ext,
+  );
+  if (!path) return;
+  exporting = true;
+  document.body.classList.add('busy');
+  const status = $('mdb-status-message');
+  clearTimeout(messageTimer);
+  status.textContent = t('exporting');
+  let error = null;
+  try {
+    const source = view.state.doc.toString();
+    if (kind === 'pdf') await ExportPDF(await buildHtml(source, base), path);
+    else await WriteBase64File(path, await buildDocx(source, base));
+  } catch (err) {
+    error = err;
+  } finally {
+    exporting = false;
+    document.body.classList.remove('busy');
+    status.textContent = '';
+  }
+  if (error) {
+    await showError(t('exportFailed', { error: String(error?.message ?? error) }));
+    return;
+  }
+  const answer = await showModal(t('exportDoneTitle'), t('exportDoneMessage', { name: fileName(path) }), [
+    { label: t('btnOpen'), value: 'open', primary: true },
+    { label: t('btnClose'), value: 'close' },
+  ], 'close');
+  if (answer === 'open') OpenWithDefaultApp(path).catch((err) => showError(String(err)));
+}
+
 // ---- 檢視模式 ----
 function setViewMode(mode) {
   viewMode = mode;
@@ -453,6 +497,10 @@ const toolbarGroups = [
     { icon: FolderOpen, key: 'openFile', run: () => openFile() },
     { icon: Save, key: 'save', run: save },
     { icon: SaveAll, key: 'saveAs', run: saveAs },
+  ],
+  [
+    { icon: FileDown, key: 'exportPdf', run: () => exportAs('pdf') },
+    { icon: FileText, key: 'exportWord', run: () => exportAs('docx') },
   ],
   [
     { icon: Bold, key: 'bold' },

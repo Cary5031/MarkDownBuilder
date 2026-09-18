@@ -1,9 +1,9 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
   "notes": {
-    "zh-TW": "新增多分頁：可同時開啟多份文件，支援 Ctrl+N / Ctrl+W / Ctrl+Tab，關閉時逐一確認未存檔的分頁。",
-    "en": "Added tabs: open multiple documents at once with Ctrl+N / Ctrl+W / Ctrl+Tab; unsaved tabs are confirmed one by one on exit."
+    "zh-TW": "新增匯出 PDF 與 Word：PDF 版面與預覽一致、文字可搜尋；Word 為原生格式，圖表與公式以圖片嵌入。",
+    "en": "Added PDF and Word export: PDFs match the preview with searchable text; Word files are native .docx with diagrams and formulas embedded as images."
   }
 }

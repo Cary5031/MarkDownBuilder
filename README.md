@@ -20,6 +20,7 @@
 - 支援 GFM：表格、任務清單、刪除線、自動連結，程式碼區塊語法上色
 - Mermaid 圖表：以 ```` ```mermaid ```` 撰寫流程圖、循序圖、甘特圖等，預覽中直接繪製
 - 數學公式（KaTeX）：行內 `$E=mc^2$`、區塊 `$$ ... $$` 或 ```` ```math ````
+- 匯出 PDF / Word：PDF 版面與預覽一致（使用系統內建的 Microsoft Edge 產生，文字可搜尋）；Word 為原生 .docx，圖表與公式以圖片嵌入
 - 預覽可顯示相對路徑圖片（例如 `![](images/a.png)`）；點外部連結會用預設瀏覽器開啟，點其他 `.md` 連結會在編輯器中開啟
 - 文件中的 HTML 會經過過濾，不會執行腳本
 - 有未儲存變更時，標題列顯示 `*`；關閉視窗、新增或開啟其他檔案前會詢問是否儲存
@@ -77,8 +78,10 @@ wails dev          # 開發模式（改前端程式會即時重載）
 | `main.go` | 視窗設定、內嵌資源、拖放、關閉攔截 |
 | `app.go` | 給前端呼叫的方法：開檔 / 存檔 / 對話框 / 設定 |
 | `dochandler.go` | 提供預覽中的本機圖片 |
+| `export.go` | 匯出：呼叫 Edge 產生 PDF、寫入 docx、用預設程式開啟 |
 | `frontend/src/main.js` | 主畫面邏輯：工具列、檔案操作、同步捲動、對話框 |
 | `frontend/src/editor.js` | 編輯器與格式化指令 |
+| `frontend/src/export.js` | 匯出：組出獨立 HTML、DOM 轉 docx |
 | `frontend/src/preview.js` | Markdown 轉 HTML、過濾、圖片路徑改寫 |
 | `frontend/src/i18n.js` | 介面字串（新增字串時中英文都要補） |
 | `build/appicon.png` | 程式圖示來源（刪掉 `build/windows/icon.ico` 後重新建置會重新產生） |

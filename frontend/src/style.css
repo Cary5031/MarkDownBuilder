@@ -565,3 +565,29 @@ body {
 .markdown-body .katex-error {
   color: #b42318;
 }
+
+/* ---- 匯出 ---- */
+body.busy,
+body.busy * {
+  cursor: progress !important;
+}
+
+/* 匯出時在畫面外重新繪製文件 */
+.export-host {
+  position: fixed;
+  left: -12000px;
+  top: 0;
+  width: 820px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.export-body {
+  padding: 0;
+}
+
+/* 公式在匯出時改為 inline-block，才能量出實際大小並轉成圖片 */
+.export-body .katex,
+.export-body .katex-display > .katex {
+  display: inline-block;
+}
