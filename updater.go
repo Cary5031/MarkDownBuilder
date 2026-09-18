@@ -156,6 +156,30 @@ func (a *App) CheckForUpdate() (*UpdateCheck, error) {
 	return &UpdateCheck{Current: current, Available: newerVersion(latest.Version, current), Latest: *latest}, nil
 }
 
+// pinnedDownloadURL 查出最後一次修改 exe 的 commit，改用該 commit 的固定網址下載。
+// main 分支的 raw 網址有 CDN 快取，剛推送的幾分鐘內可能還拿到舊檔；固定網址的內容不會變。
+// 查詢失敗時回傳原本的網址（下載後仍有 SHA-256 驗證）。
+func pinnedDownloadURL(ctx context.Context, fallback string) string {
+	const api = "https://api.github.com/repos/Cary5031/MarkDownBuilder/commits?path=build/bin/MarkDownBuilder.exe&sha=main&per_page=1"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api, nil)
+	if err != nil {
+		return fallback
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	res, err := httpClient.Do(req)
+	if err != nil {
+		return fallback
+	}
+	defer res.Body.Close()
+	var commits []struct {
+		SHA string `json:"sha"`
+	}
+	if res.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(res.Body, 1<<20)).Decode(&commits) != nil || len(commits) == 0 {
+		return fallback
+	}
+	return "https://raw.githubusercontent.com/Cary5031/MarkDownBuilder/" + commits[0].SHA + "/build/bin/MarkDownBuilder.exe"
+}
+
 type progressWriter struct {
 	ctx      context.Context
 	total    int64
@@ -178,7 +202,7 @@ func (p *progressWriter) Write(b []byte) (int, error) {
 func (a *App) download(info *VersionInfo, dest string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, info.DownloadURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pinnedDownloadURL(ctx, info.DownloadURL), nil)
 	if err != nil {
 		return err
 	}

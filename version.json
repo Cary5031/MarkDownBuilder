@@ -1,10 +1,10 @@
 {
-  "version": "1.7.0",
+  "version": "1.7.1",
   "releaseDate": "2026-09-18",
   "downloadUrl": "https://github.com/Cary5031/MarkDownBuilder/raw/main/build/bin/MarkDownBuilder.exe",
-  "sha256": "23130e079e30dbbae46d5ab87ed37c314ca7060708ccdf5d7dd8b96669cdc8ba",
+  "sha256": "bca16d46b32f9772277646dc17c6a7a22d24617426ee016fd6ee7095b8bb653a",
   "notes": {
-    "zh-TW": "新增自動更新：有網路時自動檢查新版本，右下角提示後可一鍵更新並重新啟動。",
-    "en": "Added automatic updates: when online the app checks for new versions and can update and restart in one click."
+    "zh-TW": "修正：更新時改從固定版本網址下載，避免剛發布時下載到快取中的舊檔。",
+    "en": "Fix: updates now download from a commit-pinned URL so a freshly published release is never served from a stale cache."
   }
 }
