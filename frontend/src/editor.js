@@ -257,9 +257,9 @@ export function createEditor(parent, { onChange, onCursor }) {
   const view = new EditorView({ parent, state: EditorState.create({ doc: '', extensions }) });
   return {
     view,
-    // 整份換掉內容（開檔 / 新增），同時清掉復原紀錄
-    setContent(content) {
-      view.setState(EditorState.create({ doc: content, extensions }));
+    // 為新分頁建立獨立的編輯狀態（內容、游標、復原紀錄）
+    createState(content) {
+      return EditorState.create({ doc: content, extensions });
     },
   };
 }

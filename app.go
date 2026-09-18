@@ -90,18 +90,23 @@ func (a *App) docDir() string {
 	return filepath.Dir(a.docPath)
 }
 
-// GetStartupFile 回傳命令列帶進來的檔案路徑（例如「開啟檔案 → 選擇此程式」）。
-func (a *App) GetStartupFile() string {
-	for _, arg := range os.Args[1:] {
+// GetStartupFiles 回傳命令列帶進來的檔案路徑（例如「開啟檔案 → 選擇此程式」）。
+func (a *App) GetStartupFiles() []string {
+	return filesFromArgs(os.Args[1:])
+}
+
+func filesFromArgs(args []string) []string {
+	files := []string{}
+	for _, arg := range args {
 		if strings.HasPrefix(arg, "-") {
 			continue
 		}
 		if abs, err := filepath.Abs(arg); err == nil {
-			return abs
+			arg = abs
 		}
-		return arg
+		files = append(files, arg)
 	}
-	return ""
+	return files
 }
 
 // ResolvePath 把預覽中的相對連結轉成絕對路徑（以目前文件所在資料夾為基準）。
@@ -123,9 +128,9 @@ func markdownFilters(filterName, allName string) []runtime.FileFilter {
 	}
 }
 
-// OpenFileDialog 顯示開啟檔案對話框，取消時回傳空字串。
-func (a *App) OpenFileDialog(title, filterName, allName string) (string, error) {
-	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+// OpenFileDialog 顯示開啟檔案對話框（可多選），取消時回傳空陣列。
+func (a *App) OpenFileDialog(title, filterName, allName string) ([]string, error) {
+	return runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:            title,
 		DefaultDirectory: a.docDir(),
 		Filters:          markdownFilters(filterName, allName),

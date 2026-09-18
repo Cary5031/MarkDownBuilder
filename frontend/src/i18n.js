@@ -3,7 +3,8 @@ const messages = {
   'zh-TW': {
     appName: 'MarkDown Builder',
     untitled: '未命名',
-    newFile: '新增 (Ctrl+N)',
+    newFile: '新增分頁 (Ctrl+N)',
+    closeTab: '關閉分頁 (Ctrl+W)',
     openFile: '開啟 (Ctrl+O)',
     save: '儲存 (Ctrl+S)',
     saveAs: '另存新檔 (Ctrl+Shift+S)',
@@ -56,7 +57,8 @@ const messages = {
   en: {
     appName: 'MarkDown Builder',
     untitled: 'Untitled',
-    newFile: 'New (Ctrl+N)',
+    newFile: 'New tab (Ctrl+N)',
+    closeTab: 'Close tab (Ctrl+W)',
     openFile: 'Open (Ctrl+O)',
     save: 'Save (Ctrl+S)',
     saveAs: 'Save As (Ctrl+Shift+S)',

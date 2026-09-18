@@ -6,10 +6,10 @@ import {
   Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, ListTodo, TextQuote,
   Code, SquareCode, Link, Image, Table, Minus,
-  PenLine, Columns2, Eye, Languages, Sigma,
+  PenLine, Columns2, Eye, Languages, Sigma, Plus, X,
 } from 'lucide';
 import {
-  GetStartupFile, LoadSettings, SaveSettings, OpenFileDialog, SaveFileDialog,
+  GetStartupFiles, LoadSettings, SaveSettings, OpenFileDialog, SaveFileDialog,
   ReadFile, SaveFile, SetDirty, SetDocPath, ResolvePath, Quit,
 } from '../wailsjs/go/main/App';
 import { EventsOn, OnFileDrop, WindowSetTitle, BrowserOpenURL } from '../wailsjs/runtime/runtime';
@@ -21,11 +21,14 @@ const $ = (id) => document.getElementById(id);
 const workspace = $('mdb-workspace');
 const previewScroll = $('mdb-preview-scroll');
 const preview = $('mdb-preview');
+const tabBar = $('mdb-tabs');
 
-// ---- 文件狀態 ----
-const doc = { path: '', encoding: 'UTF-8', crlf: false, bom: false };
-let savedText = null; // 上次存檔（或開檔）時的內容，用來判斷是否有未存變更
-let dirty = false;
+// ---- 分頁狀態 ----
+// 所有分頁共用同一個編輯器，每個分頁保存自己的 EditorState（內容、游標、復原紀錄）與捲動位置。
+// 作用中分頁的最新狀態永遠在 view.state，切換時才寫回 tab.state。
+let tabs = [];
+let active = null;
+let tabSeq = 0;
 let viewMode = 'split';
 
 const editor = createEditor($('mdb-editor'), {
@@ -41,25 +44,34 @@ function fileName(path) {
   return path ? path.split(/[\\/]/).pop() : t('untitled');
 }
 
+function samePath(a, b) {
+  return a && b && a.toLowerCase() === b.toLowerCase();
+}
+
 function updateTitle() {
-  WindowSetTitle(`${fileName(doc.path)}${dirty ? ' *' : ''} - ${t('appName')}`);
+  WindowSetTitle(`${fileName(active.path)}${active.dirty ? ' *' : ''} - ${t('appName')}`);
+}
+
+function syncGlobalDirty() {
+  SetDirty(tabs.some((tab) => tab.dirty));
 }
 
 function updateDirty() {
-  const now = !view.state.doc.eq(savedText);
-  if (now === dirty) return;
-  dirty = now;
-  SetDirty(dirty);
+  const now = !view.state.doc.eq(active.savedDoc);
+  if (now === active.dirty) return;
+  active.dirty = now;
+  syncGlobalDirty();
   updateTitle();
+  renderTabs();
 }
 
 function updateStatusInfo() {
   const pos = view.state.selection.main.head;
   const line = view.state.doc.lineAt(pos);
-  $('mdb-status-path').textContent = doc.path || t('untitled');
+  $('mdb-status-path').textContent = active.path || t('untitled');
   $('mdb-status-info').textContent = [
-    doc.encoding,
-    doc.crlf ? 'CRLF' : 'LF',
+    active.encoding,
+    active.crlf ? 'CRLF' : 'LF',
     t('lineCol', { line: line.number, col: pos - line.from + 1 }),
   ].join('   ');
 }
@@ -81,7 +93,7 @@ function scheduleRender() {
   renderTimer = setTimeout(render, 120);
 }
 
-function render() {
+function render(sync = true) {
   clearTimeout(renderTimer);
   const source = view.state.doc.toString();
   if (source.trim() === '') {
@@ -91,7 +103,7 @@ function render() {
     preview.querySelectorAll('img').forEach((img) => img.addEventListener('load', invalidateAnchors, { once: true }));
   }
   invalidateAnchors();
-  syncScroll('editor');
+  if (sync) syncScroll('editor');
 }
 
 function invalidateAnchors() {
@@ -216,10 +228,11 @@ function showError(message) {
   return showModal(t('errorTitle'), message, [{ label: t('btnOk'), value: 'ok', primary: true }], 'ok');
 }
 
-// 有未存變更時詢問；回傳 true 表示可以繼續（已存檔或放棄變更）
-async function confirmDiscard() {
-  if (!dirty) return true;
-  const answer = await showModal(t('unsavedTitle'), t('unsavedMessage', { name: fileName(doc.path) }), [
+// 分頁有未存變更時先切過去再詢問；回傳 true 表示可以繼續（已存檔或放棄變更）
+async function confirmDiscard(tab) {
+  if (!tab.dirty) return true;
+  activate(tab);
+  const answer = await showModal(t('unsavedTitle'), t('unsavedMessage', { name: fileName(tab.path) }), [
     { label: t('btnSave'), value: 'save', primary: true },
     { label: t('btnDiscard'), value: 'discard' },
     { label: t('btnCancel'), value: 'cancel' },
@@ -228,77 +241,188 @@ async function confirmDiscard() {
   return answer === 'discard';
 }
 
-// ---- 檔案操作 ----
-function loadDocument(info, content) {
-  Object.assign(doc, info);
-  editor.setContent(content);
-  savedText = view.state.doc;
-  dirty = false;
-  SetDirty(false);
-  SetDocPath(doc.path);
+// ---- 分頁 ----
+function createTab(info, content) {
+  const state = editor.createState(content);
+  return {
+    id: ++tabSeq,
+    path: '',
+    encoding: 'UTF-8',
+    crlf: false,
+    bom: false,
+    ...info,
+    state,
+    savedDoc: state.doc,
+    dirty: false,
+    editorScroll: 0,
+    previewScroll: 0,
+  };
+}
+
+// 空白、未命名、未修改的分頁：開檔時直接被取代
+function isPristine(tab) {
+  const doc = tab === active ? view.state.doc : tab.state.doc;
+  return !tab.path && !tab.dirty && doc.length === 0;
+}
+
+function activate(tab) {
+  if (tab === active) return;
+  if (active && tabs.includes(active)) {
+    active.state = view.state;
+    active.editorScroll = view.scrollDOM.scrollTop;
+    active.previewScroll = previewScroll.scrollTop;
+  }
+  active = tab;
+  view.setState(tab.state);
+  SetDocPath(tab.path);
   updateTitle();
   updateStatusInfo();
-  render();
-  view.scrollDOM.scrollTop = 0;
-  previewScroll.scrollTop = 0;
+  renderTabs();
+  render(false);
+  const { editorScroll, previewScroll: pvScroll } = tab;
+  requestAnimationFrame(() => {
+    view.scrollDOM.scrollTop = editorScroll;
+    previewScroll.scrollTop = pvScroll;
+  });
   view.focus();
 }
 
-async function newFile() {
-  if (!(await confirmDiscard())) return;
-  loadDocument({ path: '', encoding: 'UTF-8', crlf: false, bom: false }, '');
+function addTab(info = {}, content = '') {
+  const tab = createTab(info, content);
+  tabs.push(tab);
+  activate(tab);
+  return tab;
 }
 
+function removeTab(tab) {
+  const index = tabs.indexOf(tab);
+  if (index < 0) return;
+  tabs.splice(index, 1);
+  if (!tabs.length) {
+    addTab();
+  } else if (tab === active) {
+    activate(tabs[Math.min(index, tabs.length - 1)]);
+  }
+  syncGlobalDirty();
+  renderTabs();
+}
+
+async function closeTab(tab = active) {
+  if (!(await confirmDiscard(tab))) return false;
+  removeTab(tab);
+  return true;
+}
+
+function cycleTab(step) {
+  const index = tabs.indexOf(active);
+  activate(tabs[(index + step + tabs.length) % tabs.length]);
+}
+
+function renderTabs() {
+  const items = tabs.map((tab) => {
+    const el = document.createElement('div');
+    el.className = 'tab' + (tab === active ? ' active' : '') + (tab.dirty ? ' dirty' : '');
+    el.title = tab.path || t('untitled');
+    el.dataset.tabId = tab.id;
+    const name = document.createElement('span');
+    name.className = 'tab-name';
+    name.textContent = fileName(tab.path);
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'tab-close';
+    close.title = t('closeTab');
+    close.append(createElement(X, { width: 14, height: 14 }));
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeTab(tab);
+    });
+    el.append(name, close);
+    el.addEventListener('mousedown', (e) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        closeTab(tab);
+      }
+    });
+    el.addEventListener('click', () => activate(tab));
+    return el;
+  });
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'tab-add';
+  add.title = t('newFile');
+  add.append(createElement(Plus, { width: 16, height: 16 }));
+  add.addEventListener('click', newFile);
+  tabBar.replaceChildren(...items, add);
+  tabBar.querySelector('.tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+// ---- 檔案操作 ----
+function newFile() {
+  addTab();
+}
+
+// 開啟檔案成為分頁；已開啟則切換過去；目前是空白分頁則取代它
 async function openPath(path) {
+  const existing = tabs.find((tab) => samePath(tab.path, path));
+  if (existing) {
+    activate(existing);
+    return;
+  }
+  let d;
   try {
-    const d = await ReadFile(path);
-    loadDocument({ path: d.path, encoding: d.encoding, crlf: d.crlf, bom: d.bom }, d.content);
+    d = await ReadFile(path);
   } catch (err) {
     await showError(t('openFailed', { error: String(err) }));
+    return;
   }
+  const reuse = active && isPristine(active) ? active : null;
+  addTab({ path: d.path, encoding: d.encoding, crlf: d.crlf, bom: d.bom }, d.content);
+  if (reuse) removeTab(reuse);
 }
 
 async function openFile(path) {
-  if (!(await confirmDiscard())) return;
-  if (!path) {
-    path = await OpenFileDialog(t('dialogOpenTitle'), t('markdownFiles'), t('allFiles'));
-    if (!path) return;
-  }
-  await openPath(path);
+  const paths = path ? [path] : await OpenFileDialog(t('dialogOpenTitle'), t('markdownFiles'), t('allFiles'));
+  for (const p of paths ?? []) await openPath(p);
 }
 
 async function writeTo(path) {
+  const tab = active;
   try {
-    await SaveFile(path, view.state.doc.toString(), doc.crlf, doc.bom);
+    await SaveFile(path, view.state.doc.toString(), tab.crlf, tab.bom);
   } catch (err) {
     await showError(t('saveFailed', { error: String(err) }));
     return false;
   }
-  const pathChanged = path !== doc.path;
-  doc.path = path;
-  doc.encoding = 'UTF-8'; // 存檔一律為 UTF-8（Big5 開啟的檔案存檔後即轉為 UTF-8）
-  savedText = view.state.doc;
-  dirty = false;
-  SetDirty(false);
+  const pathChanged = path !== tab.path;
+  tab.path = path;
+  tab.encoding = 'UTF-8'; // 存檔一律為 UTF-8（Big5 開啟的檔案存檔後即轉為 UTF-8）
+  tab.savedDoc = view.state.doc;
+  tab.dirty = false;
+  syncGlobalDirty();
   if (pathChanged) {
     SetDocPath(path);
     render(); // 資料夾變了，相對路徑圖片要重新解析
   }
   updateTitle();
   updateStatusInfo();
+  renderTabs();
   flashMessage(t('saved'));
   return true;
 }
 
 async function save() {
-  return doc.path ? writeTo(doc.path) : saveAs();
+  return active.path ? writeTo(active.path) : saveAs();
 }
 
 async function saveAs() {
-  const defaultName = doc.path ? fileName(doc.path) : `${t('untitled')}.md`;
+  const defaultName = active.path ? fileName(active.path) : `${t('untitled')}.md`;
   const path = await SaveFileDialog(t('dialogSaveTitle'), defaultName, t('markdownFiles'), t('allFiles'));
   if (!path) return false;
-  return writeTo(path);
+  // 另存成另一個已開啟的檔案時，關掉那個舊分頁，避免同一檔案開兩次
+  const duplicate = tabs.find((tab) => tab !== active && samePath(tab.path, path));
+  const ok = await writeTo(path);
+  if (ok && duplicate) removeTab(duplicate);
+  return ok;
 }
 
 // ---- 檢視模式 ----
@@ -317,6 +441,7 @@ function changeLanguage(code) {
   setLanguage(code);
   updateTitle();
   updateStatusInfo();
+  renderTabs();
   if (view.state.doc.length === 0) render();
   SaveSettings({ language: code });
 }
@@ -408,7 +533,7 @@ function buildToolbar() {
   bar.append(lang);
 }
 
-// ---- 快捷鍵（檔案類；格式類在 editor.js）----
+// ---- 快捷鍵（檔案 / 分頁類；格式類在 editor.js）----
 document.addEventListener(
   'keydown',
   (e) => {
@@ -421,7 +546,13 @@ document.addEventListener(
       return;
     }
     if (!ctrl || e.altKey) return;
-    const actions = { n: newFile, o: () => openFile(), s: e.shiftKey ? saveAs : save };
+    const actions = {
+      n: newFile,
+      o: () => openFile(),
+      s: e.shiftKey ? saveAs : save,
+      w: () => closeTab(),
+      tab: () => cycleTab(e.shiftKey ? -1 : 1),
+    };
     if (actions[k]) {
       e.preventDefault();
       e.stopPropagation();
@@ -449,7 +580,7 @@ previewScroll.addEventListener('click', async (e) => {
     BrowserOpenURL(href);
     return;
   }
-  // 相對路徑的 .md 連結：在編輯器中開啟
+  // 相對路徑的 .md 連結：開成分頁
   const pathPart = decodeURIComponent(href.split('#')[0]);
   if (/\.(md|markdown|mdown|mkd)$/i.test(pathPart)) {
     const abs = await ResolvePath(pathPart);
@@ -459,20 +590,20 @@ previewScroll.addEventListener('click', async (e) => {
 
 // ---- 拖放開檔 ----
 const SUPPORTED = /\.(md|markdown|mdown|mkd|txt)$/i;
-OnFileDrop((_x, _y, paths) => {
+OnFileDrop(async (_x, _y, paths) => {
   if (modalOpen || !paths?.length) return;
-  const path = paths[0];
-  if (!SUPPORTED.test(path)) {
-    showError(t('unsupportedFile', { name: fileName(path) }));
-    return;
-  }
-  openFile(path);
+  const unsupported = paths.filter((p) => !SUPPORTED.test(p));
+  for (const p of paths.filter((p) => SUPPORTED.test(p))) await openPath(p);
+  if (unsupported.length) showError(t('unsupportedFile', { name: unsupported.map(fileName).join('、') }));
 }, false);
 
-// ---- 關閉視窗 ----
+// ---- 關閉視窗：逐一詢問有未存變更的分頁 ----
 EventsOn('close-requested', async () => {
   if (modalOpen) return;
-  if (await confirmDiscard()) Quit();
+  for (const tab of [...tabs]) {
+    if (!(await confirmDiscard(tab))) return;
+  }
+  Quit();
 });
 
 // ---- 啟動 ----
@@ -485,10 +616,8 @@ async function init() {
   applyToDom();
   setViewMode('split');
 
-  loadDocument({ path: '', encoding: 'UTF-8', crlf: false, bom: false }, '');
-  const startup = await GetStartupFile();
-  if (startup) await openPath(startup);
+  addTab();
+  for (const path of await GetStartupFiles()) await openPath(path);
 }
 
 init();
-
